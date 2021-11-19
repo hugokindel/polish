@@ -51,7 +51,7 @@ type program = block
 (***********************************************************************)
 
 
-(** TODO : Fct pour read_polish [reste a mettre le code de read_file dans read_polish] *)
+(** TODO : Fct pour read_polish [FAIT] *)
 
 (** TODO : PRETRAITEMENT   [FAIT] *)
 
@@ -188,13 +188,12 @@ let getInstructionWhile sl block = match sl with
                 | "WHILE" -> let (c,liRestant) = getCond t in While (c,block)
                 | _ -> failwith "Erreur getInstrcutionWhile" )
 
-(**  prend en argument une liste de string et 2 block puis renvoie l'instruction if *)
+(**  prend en argument une liste de string et 2 block puis renvoie l'instruction if*)
 let getInstructionIf sl block block2 = match sl with
     | [] -> failwith "Erreur getInstrcutionIf"
     | x::t -> (match x with
                 | "IF" -> let (c,liRestant) = getCond t in If (c,block,block2)
                 | _ -> failwith "Erreur getInstrcutionIf" )
-
 
 
 
@@ -300,13 +299,15 @@ let rec getBlock li indentation acc = match li with
                                      getBlock liRestant indentation (acc@[((lg:position),inst)])
                         | "IF" ->  let (block,liRestant) = getBlock  t (indentation+1) [] in
                                    (match liRestant with
-                                     | [] -> failwith "Erreur getBlock"
+                                     | [] ->  let inst = getInstructionIf sl block [] in
+                                              getBlock liRestant indentation (acc@[((lg:position),inst)])
                                      | y::t2 ->  (match y with
                                                    | (lg2,id2,sl2) -> (match List.hd sl2 with
                                                                      | "ELSE" -> let (block2,liRestant2) = getBlock t2 (indentation+1) [] in
                                                                                  let inst = getInstructionIf sl block block2 in
                                                                                  getBlock liRestant2 indentation (acc@[((lg:position),inst)])
-                                                                     | _ -> failwith "Erreur getBlock"  )  ) )
+                                                                     | _ -> let inst = getInstructionIf sl block [] in
+                                                                            getBlock liRestant indentation (acc@[((lg:position),inst)]) )  ) )
                         | "COMMENT" -> getBlock t indentation acc
                         | _ ->  let inst = getInstruction sl in
                                 getBlock t indentation (acc@[((lg:position),inst)])  )
@@ -372,7 +373,7 @@ let rec getProgram li acc = match li with
 
 
 
-(**  TODO : lire le fichier et renvoyer le programme [mettre dans read_polish]
+(**  TODO : PREMIERE VERSION, A SUPPRIMER
 prend en argument un nom de fichier puis renvoie le program
 let read infile =
     try
