@@ -389,6 +389,59 @@ let read infile =
 
 (** TODO : Fct pour print_polish [A FAIRE] *)
 
+let pn () : unit = print_newline ()
+
+(** Eq (* = *)| Ne (* Not equal, <> *)| Lt (* Less than, < *)| Le (* Less or equal, <= *)| Gt (* Greater than, > *)| Ge (* Greater or equal, >= *) *)
+let print_comp c = match c with
+    | Eq -> print_string "= "
+    | Ne -> print_string "<> "
+    | Lt -> print_string "< "
+    | Le -> print_string "<= "
+    | Gt -> print_string "> "
+    | Ge -> print_string ">= "
+
+(**  Add | Sub | Mul | Div | Mod *)
+let print_op o = match o with
+    | Add -> print_string "+ "
+    | Sub -> print_string "- "
+    | Mul -> print_string "* "
+    | Div -> print_string "/ "
+    | Mod -> print_string "mod " (** TODO : mettre le symbole modulo *)
+
+let print_name (n:name) = let s = n^" " in print_string s
+
+let print_int (i:int) = let s = (string_of_int i)^" " in print_string s
+
+(** Num of int | Var of name | Op of op * expr * expr *)
+let rec print_expr e = match e with
+    | Num i -> print_int i
+    | Var n -> print_name n
+    | Op (o,e1,e2) -> print_op o; print_expr e1; print_expr e2
+
+(** expr * comp * expr *)
+let print_cond c = match c with
+    | (e1,c1,e2) -> print_expr e1; print_comp c1; print_expr e2
+
+(** indentation *)
+let rec print_ind2 n s : unit = if n>0 then print_ind2 (n-1) (s^"  ") else print_string s
+
+let print_ind n = print_ind2 n ""
+
+(** print program *)
+let rec print_program p ind : unit = match p with
+    | [] -> ()
+    | x::t -> (match x with
+                | (pos,ins) -> (match ins with
+                                 | Set (n,e) -> print_ind ind; print_name n; print_string ":= "; print_expr e; pn (); print_program t ind
+                                 | Print (e) -> print_ind ind; print_string "PRINT "; print_expr e; pn ();  print_program t ind
+                                 | Read (n) -> print_ind ind; print_string "READ "; print_name n; pn ();  print_program t ind
+                                 | If (c,b1,b2) -> print_ind ind; print_string "IF "; print_cond c; pn ();  print_program b1 (ind+1);
+                                                   (match b2 with | [] -> print_program t ind | _ -> print_ind ind; print_string "ELSE "; pn ();  print_program b2 (ind+1); print_program t ind   )
+                                 | While (c,b) -> print_ind ind; print_string "WHILE "; print_cond c; pn ();  print_program b (ind+1); print_program t ind      )   )
+
+
+
+
 (** TODO : Fct pour eval_polish [A FAIRE] *)
 
 let read_polish (filename:string) : program =
@@ -399,13 +452,13 @@ let read_polish (filename:string) : program =
       getProgram li []
     with Sys_error s -> failwith "Erreur read file"
 
-let print_polish (p:program) : unit = failwith "TODO"
+let print_polish (p:program) : unit = print_program (p:(position * instr) list) 0
 
 let eval_polish (p:program) : unit = failwith "TODO"
 
 let usage () =
   print_string "Polish : analyse statique d'un mini-langage\n";
-  print_string "usage: à documenter (TODO)\n"
+  print_string "usage: -reprint filename \n \t -eval filename\n"
 
 let main () =
   match Sys.argv with
