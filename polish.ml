@@ -330,13 +330,15 @@ let rec getProgram li acc : program = match li with
                     (match List.hd sl with
                         | "IF" -> let (block,liRestant) = getBlock t 1 [] in
                                   (match liRestant with
-                                    | [] -> failwith "Erreur getProgram"
+                                    | [] -> let inst = getInstructionIf sl block [] in
+                                            getProgram liRestant (acc@[((lg:position),inst)])
                                     | y::t2 ->  (match y with
                                                   | (lg2,id2,sl2) -> (match List.hd sl2 with
                                                                        | "ELSE" -> let (block2,liRestant2) = getBlock t2 1 [] in
                                                                                    let inst = getInstructionIf sl block block2 in
                                                                                    getProgram liRestant2 (acc@[((lg:position),inst)])
-                                                                       | _ -> failwith "Erreur getProgram"  )  ) )
+                                                                       | _ -> let inst = getInstructionIf sl block [] in
+                                                                              getProgram liRestant (acc@[((lg:position),inst)])  )  ) )
                         | "WHILE" -> let (block,liRestant) = getBlock t 1 [] in
                                      let inst = getInstructionWhile sl block in
                                      getProgram liRestant (acc@[((lg:position),inst)])
