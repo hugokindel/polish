@@ -406,7 +406,7 @@ let print_op o = match o with
     | Sub -> print_string "- "
     | Mul -> print_string "* "
     | Div -> print_string "/ "
-    | Mod -> print_string "mod " (** TODO : mettre le symbole modulo *)
+    | Mod -> print_string "% "
 
 let print_name (n:name) = let s = n^" " in print_string s
 
