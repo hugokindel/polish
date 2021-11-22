@@ -387,11 +387,12 @@ let read infile =
 *)
 
 
-(** TODO : Fct pour print_polish [A FAIRE] *)
+(** TODO : Fct pour print_polish [FAIT] *)
 
+(** vide le tampon et retour a la ligne *)
 let pn () : unit = print_newline ()
 
-(** Eq (* = *)| Ne (* Not equal, <> *)| Lt (* Less than, < *)| Le (* Less or equal, <= *)| Gt (* Greater than, > *)| Ge (* Greater or equal, >= *) *)
+(** affiche les opérateurs de comparaisons *)
 let print_comp c = match c with
     | Eq -> print_string "= "
     | Ne -> print_string "<> "
@@ -400,7 +401,7 @@ let print_comp c = match c with
     | Gt -> print_string "> "
     | Ge -> print_string ">= "
 
-(**  Add | Sub | Mul | Div | Mod *)
+(**  affiche les opérateurs arithmétiques *)
 let print_op o = match o with
     | Add -> print_string "+ "
     | Sub -> print_string "- "
@@ -408,26 +409,29 @@ let print_op o = match o with
     | Div -> print_string "/ "
     | Mod -> print_string "% "
 
+(** affiche un nom de variable *)
 let print_name (n:name) = let s = n^" " in print_string s
 
+(** affiche un entier *)
 let print_int (i:int) = let s = (string_of_int i)^" " in print_string s
 
-(** Num of int | Var of name | Op of op * expr * expr *)
+(** affiche une expression arithmétique *)
 let rec print_expr e = match e with
     | Num i -> print_int i
     | Var n -> print_name n
     | Op (o,e1,e2) -> print_op o; print_expr e1; print_expr e2
 
-(** expr * comp * expr *)
+(** affiche une condition *)
 let print_cond c = match c with
     | (e1,c1,e2) -> print_expr e1; print_comp c1; print_expr e2
 
-(** indentation *)
-let rec print_ind2 n s : unit = if n>0 then print_ind2 (n-1) (s^"  ") else print_string s
+(** affiche indentation * 2 espaces *)
+let print_ind n =
+    let rec print_ind2 n s : unit =
+        if n>0 then print_ind2 (n-1) (s^"  ") else print_string s in
+    print_ind2 n ""
 
-let print_ind n = print_ind2 n ""
-
-(** print program *)
+(** affiche le program *)
 let rec print_program p ind : unit = match p with
     | [] -> ()
     | x::t -> (match x with
