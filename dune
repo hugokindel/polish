@@ -1,4 +1,12 @@
 (executable
  (name polish)
  (flags :standard -w -27-26-32-33 \ -short-paths)
+ (libraries str)
+)
+(env
+ (dev
+  (flags 
+   (:standard -w -50)
+  )
+ )
 )
