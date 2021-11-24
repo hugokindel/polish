@@ -17,7 +17,7 @@ let print_polish (program: program): unit =
 let eval_polish (program:  program): unit =
   failwith "TODO"
 
-(** TODO : Eliminate dead blocks *)
+(** Prints a simplified and parsed Polish program. *)
 let simpl_polish (program: program): program =
   (propa_block program: program)
 

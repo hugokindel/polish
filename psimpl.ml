@@ -10,7 +10,7 @@ let result_of_op (op: op) (int1: int) (int2: int): int =
   | Mod -> int1 mod int2
 
 
-let rec simplification_expr expr : expr =
+let rec simplification_expr (expr: expr) : expr =
   match expr with
   | Num integer -> Num integer
   | Var name -> Var name
@@ -50,26 +50,57 @@ let simplification_cond (cond: cond): cond =
     ( (simplification_expr left_expr) , comp , (simplification_expr right_expr) )
 
 
+let result_of_cond (lexpr: expr) (comp: comp) (rexpr: expr): bool =
+  match comp with
+    | Eq -> lexpr = rexpr
+    | Ne -> lexpr <> rexpr
+    | Lt -> lexpr < rexpr
+    | Le -> lexpr <= rexpr
+    | Gt -> lexpr > rexpr
+    | Ge -> lexpr >= rexpr
+
+
+let dead_cond (cond: cond): bool * bool =
+  match cond with
+  | (left_expr, comp, right_expr) ->
+      (match left_expr, right_expr with
+        | Num int1, Num int2 -> 
+            let result = result_of_cond left_expr comp right_expr in
+            (true,result)
+        | _, _ -> (false,false)  )
+
+
 let propa_block (block: block): block =
 
   let rec propa_block_rec block acc: block =
     match block with
     | [] -> acc
     | (position, instr)::block' ->
-      let instr2 =
+      let blockResult =
       (match instr with
-      | Set (name, expr) -> Set (name,(simplification_expr expr))
-      | Print (expr) -> Print (simplification_expr expr)
-      | Read (name) -> Read (name)
+      | Set (name, expr) -> [(position , Set (name,(simplification_expr expr)) )]
+      | Print (expr) -> [(position , Print (simplification_expr expr) )]
+      | Read (name) -> [(position , Read (name) )]
       | If (cond, if_block, else_block) ->
         let cond2 = simplification_cond cond in
-        let if_block2 = propa_block_rec if_block [] in
-        let else_block2 = propa_block_rec else_block [] in
-        If (cond2,if_block2,else_block2)
+        let (b1,b2) = dead_cond cond2 in
+        if b1 then
+          if b2 then
+            propa_block_rec if_block [] 
+          else
+            propa_block_rec else_block []
+        else
+          let if_block2 = propa_block_rec if_block [] in
+          let else_block2 = propa_block_rec else_block [] in
+          [(position , If (cond2,if_block2,else_block2) )]
       | While (cond, block) ->
         let cond2 = simplification_cond cond in
-        let block2 = propa_block_rec block [] in
-        While (cond2,block2)  ) in
-      propa_block_rec block' (acc@[(position,instr2)]) in
+        let (b1,b2) = dead_cond cond2 in
+        if b1 && (not b2) then
+          []
+        else
+          let block2 = propa_block_rec block [] in
+          [(position , While (cond2,block2) )]            ) in
+      propa_block_rec block' (acc@blockResult) in
 
   propa_block_rec block []
