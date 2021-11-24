@@ -1,7 +1,6 @@
 open Printf
 open Ptypes
 open Pread
-open Pparse
 open Pprint
 
 (** Reads a Polish program from a filename. *)
