@@ -3,6 +3,7 @@ open Ptypes
 open Pread
 open Pprint
 open Psimpl
+open Pvar
 
 (** Reads a Polish program from a filename. *)
 let read_polish (filename: string): program =
@@ -21,6 +22,11 @@ let eval_polish (program:  program): unit =
 let simpl_polish (program: program): program =
   (propa_block program: program)
 
+(** Prints all variables and variables non initialize before acces of a parsed Polish program *)
+let var_non_init_polish (program: program): unit =
+	let (vEtu,vNonInit) = search_block program in
+	print_vars vEtu vNonInit
+
 (** Usage of the CLI. *)
 let usage () =
   printf "polish: static analysis of a mini-language\n";
@@ -28,7 +34,8 @@ let usage () =
   printf "usage:\n";
   printf "\tpolish -reprint FILENAME -> parses and reprints a polish program\n";
   printf "\tpolish -eval FILENAME -> parses and evaluates a polish program\n";
-  printf "\tpolish -simpl FILENAME -> parses, simplifies and reprints a polish program\n"
+  printf "\tpolish -simpl FILENAME -> parses, simplifies and reprints a polish program\n";
+  printf "\tpolish -vars FILENAME -> parses and prints variables non initialize before acces of a polish program\n"
 
 (** Main function *)
 let main () =
@@ -36,6 +43,7 @@ let main () =
   | [|_;"-reprint";file|] -> print_polish (read_polish file)
   | [|_;"-eval";file|] -> eval_polish (read_polish file)
   | [|_;"-simpl";file|] -> print_polish (simpl_polish (read_polish file))
+  | [|_;"-vars";file|] -> var_non_init_polish (read_polish file)
   | _ -> usage ()
 
 (** Calls the main function. *)
