@@ -27,6 +27,10 @@ let var_non_init_polish (program: program): unit =
 	let (vEtu,vNonInit) = search_block program in
 	print_vars vEtu vNonInit
 
+(** TODO: Print possible signs for variables of a Polish program *)
+let sign_polish (program: program): unit =
+  failwith "TODO"
+
 (** Usage of the CLI. *)
 let usage () =
   printf "polish: static analysis of a mini-language\n";
@@ -44,6 +48,7 @@ let main () =
   | [|_;"-eval";file|] -> eval_polish (read_polish file)
   | [|_;"-simpl";file|] -> print_polish (simpl_polish (read_polish file))
   | [|_;"-vars";file|] -> var_non_init_polish (read_polish file)
+  | [|_;"-sign";file|] -> sign_polish (read_polish file)
   | _ -> usage ()
 
 (** Calls the main function. *)
