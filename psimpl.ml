@@ -1,15 +1,14 @@
 open Ptypes
+open Putils
 
-(** TODO : use zarith module for expr and cond *)
-
-let result_of_op (op: op) (int1: int) (int2: int): int =
-  match op with
-  | Add -> int1 + int2
-  | Sub -> int1 - int2
-  | Mul -> int1 * int2
-  | Div -> int1 / int2
-  | Mod -> int1 mod int2
-
+let result_of_cond (left_expr: expr) (comp: comp) (right_expr: expr): bool =
+  match comp with
+  | Eq -> left_expr = right_expr
+  | Ne -> left_expr <> right_expr
+  | Lt -> left_expr < right_expr
+  | Le -> left_expr <= right_expr
+  | Gt -> left_expr > right_expr
+  | Ge -> left_expr >= right_expr
 
 let rec simplification_expr (expr: expr) : expr =
   match expr with
@@ -18,7 +17,7 @@ let rec simplification_expr (expr: expr) : expr =
   | Op (op, expr1, expr2) ->
   		(match op, expr1, expr2 with
   			| _, Num int1, Num int2 ->
-  				let result = result_of_op op int1 int2 in Num result
+  				let result = eval_op op int1 int2 in Num result
   			| Div, Num 0, _
   			| Mod, Num 0, _
   			| Mod, _, Num 1
@@ -38,27 +37,14 @@ let rec simplification_expr (expr: expr) : expr =
   				let simplExpr1 = simplification_expr expr1 in
   				let simplExpr2 = simplification_expr expr2 in
   				if simplExpr1 = expr1 && simplExpr2 = expr2
-  				then Op ( op , simplExpr1 , simplExpr2 )
-  				else simplification_expr (Op ( op , simplExpr1 , simplExpr2 ) )
-
-        )
+  				then Op (op , simplExpr1 , simplExpr2)
+  				else simplification_expr (Op ( op , simplExpr1 , simplExpr2)))
 
 
 let simplification_cond (cond: cond): cond =
   match cond with
   | (left_expr, comp, right_expr) ->
     ( (simplification_expr left_expr) , comp , (simplification_expr right_expr) )
-
-
-let result_of_cond (lexpr: expr) (comp: comp) (rexpr: expr): bool =
-  match comp with
-    | Eq -> lexpr = rexpr
-    | Ne -> lexpr <> rexpr
-    | Lt -> lexpr < rexpr
-    | Le -> lexpr <= rexpr
-    | Gt -> lexpr > rexpr
-    | Ge -> lexpr >= rexpr
-
 
 let dead_cond (cond: cond): bool * bool =
   match cond with
@@ -68,7 +54,6 @@ let dead_cond (cond: cond): bool * bool =
             let result = result_of_cond left_expr comp right_expr in
             (true,result)
         | _, _ -> (false,false)  )
-
 
 let propa_block (block: block): block =
 

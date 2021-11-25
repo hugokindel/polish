@@ -23,12 +23,12 @@ let eval_polish (program:  program): unit =
 let simpl_polish (program: program): program =
   (propa_block program: program)
 
-(** Prints all variables and variables non initialize before acces of a parsed Polish program. *)
-let var_non_init_polish (program: program): unit =
+(** Prints a list of initialized and uninitialized variables of a parsed Polish program. *)
+let vars_polish (program: program): unit =
 	let (vEtu,vNonInit) = search_block program in
 	print_vars vEtu vNonInit
 
-(** TODO: Print possible signs for variables of a Polish program *)
+(** TODO: Print possible signs for variables of a parsed Polish program *)
 let sign_polish (program: program): unit =
   failwith "TODO"
 
@@ -44,13 +44,17 @@ let usage () =
 
 (** Main function *)
 let main () =
-  match Sys.argv with
-  | [|_;"-reprint";file|] -> print_polish (read_polish file)
-  | [|_;"-eval";file|] -> eval_polish (read_polish file)
-  | [|_;"-simpl";file|] -> print_polish (simpl_polish (read_polish file))
-  | [|_;"-vars";file|] -> var_non_init_polish (read_polish file)
-  | [|_;"-sign";file|] -> sign_polish (read_polish file)
-  | _ -> usage ()
+  try
+    match Sys.argv with
+    | [|_;"-reprint";file|] -> print_polish (read_polish file)
+    | [|_;"-eval";file|] -> eval_polish (simpl_polish (read_polish file))
+    | [|_;"-simpl";file|] -> print_polish (simpl_polish (read_polish file))
+    | [|_;"-vars";file|] -> vars_polish (read_polish file)
+    | [|_;"-sign";file|] -> sign_polish (read_polish file)
+    | _ -> usage ()
+  with Failure message ->
+    printf "%s\n" message;
+    exit 1
 
 (** Calls the main function. *)
 let () = main ()
