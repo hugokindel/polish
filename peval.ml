@@ -12,15 +12,7 @@ let rec eval_expr (expr: expr) (env: int SymbolTable.t): int =
 
 let eval_cond (cond: cond) (env: int SymbolTable.t): bool =
   let (left_expr, comp, right_expr) = cond in
-	let left_expr = eval_expr left_expr env in
-	let right_expr = eval_expr right_expr env in
-	match comp with
-	| Eq -> left_expr = right_expr
-	| Ne -> left_expr <> right_expr
-	| Lt -> left_expr < right_expr
-	| Le -> left_expr <= right_expr
-	| Gt -> left_expr > right_expr
-	| Ge -> left_expr >= right_expr
+	eval_comp comp (eval_expr left_expr env) (eval_expr right_expr env)
 
 let eval_block (block: block): int SymbolTable.t =
 

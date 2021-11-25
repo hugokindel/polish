@@ -1,15 +1,6 @@
 open Ptypes
 open Putils
 
-let result_of_cond (left_expr: expr) (comp: comp) (right_expr: expr): bool =
-  match comp with
-  | Eq -> left_expr = right_expr
-  | Ne -> left_expr <> right_expr
-  | Lt -> left_expr < right_expr
-  | Le -> left_expr <= right_expr
-  | Gt -> left_expr > right_expr
-  | Ge -> left_expr >= right_expr
-
 let rec simplification_expr (expr: expr) : expr =
   match expr with
   | Num integer -> Num integer
@@ -32,28 +23,28 @@ let rec simplification_expr (expr: expr) : expr =
   			| Mod, _, Num 0
   			| Div, _, Num 0 ->
   				let simplExpr1 = simplification_expr expr1 in
-  				Op (op,simplExpr1,expr2)
+  				Op (op, simplExpr1, expr2)
   			| _,_,_ ->
   				let simplExpr1 = simplification_expr expr1 in
   				let simplExpr2 = simplification_expr expr2 in
   				if simplExpr1 = expr1 && simplExpr2 = expr2
-  				then Op (op , simplExpr1 , simplExpr2)
-  				else simplification_expr (Op ( op , simplExpr1 , simplExpr2)))
+  				then Op (op, simplExpr1, simplExpr2)
+  				else simplification_expr (Op (op, simplExpr1, simplExpr2)))
 
 
 let simplification_cond (cond: cond): cond =
   match cond with
   | (left_expr, comp, right_expr) ->
-    ( (simplification_expr left_expr) , comp , (simplification_expr right_expr) )
+    ((simplification_expr left_expr), comp, (simplification_expr right_expr))
 
 let dead_cond (cond: cond): bool * bool =
   match cond with
   | (left_expr, comp, right_expr) ->
       (match left_expr, right_expr with
         | Num int1, Num int2 -> 
-            let result = result_of_cond left_expr comp right_expr in
+            let result = eval_comp comp int1 int2 in
             (true,result)
-        | _, _ -> (false,false)  )
+        | _, _ -> (false,false))
 
 let propa_block (block: block): block =
 
@@ -63,9 +54,9 @@ let propa_block (block: block): block =
     | (position, instr)::block' ->
       let blockResult =
       (match instr with
-      | Set (name, expr) -> [(position , Set (name,(simplification_expr expr)) )]
-      | Print (expr) -> [(position , Print (simplification_expr expr) )]
-      | Read (name) -> [(position , Read (name) )]
+      | Set (name, expr) -> [(position , Set (name,(simplification_expr expr)))]
+      | Print (expr) -> [(position , Print (simplification_expr expr))]
+      | Read (name) -> [(position , Read (name))]
       | If (cond, if_block, else_block) ->
         let cond2 = simplification_cond cond in
         let (b1,b2) = dead_cond cond2 in
@@ -77,7 +68,7 @@ let propa_block (block: block): block =
         else
           let if_block2 = propa_block_rec if_block [] in
           let else_block2 = propa_block_rec else_block [] in
-          [(position , If (cond2,if_block2,else_block2) )]
+          [(position , If (cond2,if_block2,else_block2))]
       | While (cond, block) ->
         let cond2 = simplification_cond cond in
         let (b1,b2) = dead_cond cond2 in
@@ -85,7 +76,7 @@ let propa_block (block: block): block =
           []
         else
           let block2 = propa_block_rec block [] in
-          [(position , While (cond2,block2) )]            ) in
+          [(position , While (cond2,block2) )]) in
       propa_block_rec block' (acc@blockResult) in
 
   propa_block_rec block []

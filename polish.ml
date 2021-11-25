@@ -2,9 +2,9 @@ open Printf
 open Ptypes
 open Pread
 open Pprint
+open Peval
 open Psimpl
 open Pvar
-open Peval
 
 (** Reads a Polish program from a filename. *)
 let read_polish (filename: string): program =
@@ -25,8 +25,8 @@ let simpl_polish (program: program): program =
 
 (** Prints a list of initialized and uninitialized variables of a parsed Polish program. *)
 let vars_polish (program: program): unit =
-	let (vEtu,vNonInit) = search_block program in
-	print_vars vEtu vNonInit
+	let (vars_init, vars_uninit) = search_block program in
+	print_vars vars_init vars_uninit
 
 (** TODO: Print possible signs for variables of a parsed Polish program *)
 let sign_polish (program: program): unit =
