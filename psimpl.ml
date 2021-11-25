@@ -1,6 +1,7 @@
 open Ptypes
 
-(** TODO : Module pr des calculs precis ? *)
+(** TODO : use zarith module for expr and cond *)
+
 let result_of_op (op: op) (int1: int) (int2: int): int =
   match op with
   | Add -> int1 + int2
@@ -41,7 +42,6 @@ let rec simplification_expr (expr: expr) : expr =
   				else simplification_expr (Op ( op , simplExpr1 , simplExpr2 ) )
 
         )
-
 
 
 let simplification_cond (cond: cond): cond =

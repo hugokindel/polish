@@ -4,6 +4,7 @@ open Pread
 open Pprint
 open Psimpl
 open Pvar
+open Peval
 
 (** Reads a Polish program from a filename. *)
 let read_polish (filename: string): program =
@@ -14,15 +15,15 @@ let read_polish (filename: string): program =
 let print_polish (program: program): unit =
   print_block program
 
-(** TODO: Evaluates a Polish program. *)
+(** Evaluate a parsed Polish program. *)
 let eval_polish (program:  program): unit =
-  failwith "TODO"
+  let env = eval_block program in ()
 
 (** Prints a simplified and parsed Polish program. *)
 let simpl_polish (program: program): program =
   (propa_block program: program)
 
-(** Prints all variables and variables non initialize before acces of a parsed Polish program *)
+(** Prints all variables and variables non initialize before acces of a parsed Polish program. *)
 let var_non_init_polish (program: program): unit =
 	let (vEtu,vNonInit) = search_block program in
 	print_vars vEtu vNonInit
