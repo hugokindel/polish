@@ -17,11 +17,11 @@ let print_polish (program: program): unit =
 
 (** Evaluate a parsed Polish program. *)
 let eval_polish (program:  program): unit =
-  let env = eval_block program in ()
+  let _ = eval_block program in ()
 
 (** Prints a simplified and parsed Polish program. *)
 let simpl_polish (program: program): program =
-  (propa_block program: program)
+  simpl_block program
 
 (** Prints a list of initialized and uninitialized variables of a parsed Polish program. *)
 let vars_polish (program: program): unit =
