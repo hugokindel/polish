@@ -4,7 +4,7 @@ open Pread
 open Pprint
 open Peval
 open Psimpl
-open Pvar
+open Pvars
 
 (** Reads a Polish program from a filename. *)
 let read_polish (filename: string): program =
@@ -25,7 +25,7 @@ let simpl_polish (program: program): program =
 
 (** Prints a list of initialized and uninitialized variables of a parsed Polish program. *)
 let vars_polish (program: program): unit =
-	let (vars_init, vars_uninit) = search_block program in
+	let (vars_init, vars_uninit) = vars_block program in
 	print_vars vars_init vars_uninit
 
 (** TODO: Print possible signs for variables of a parsed Polish program *)
