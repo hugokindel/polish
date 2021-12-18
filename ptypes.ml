@@ -48,3 +48,10 @@ type indentation = int
 
 (** Line of file with useful informations (position and indentation). *)
 type line = position * indentation * string list
+
+(** Signs of a variable. *)
+type sign =
+| Neg
+| Zero
+| Pos
+| Error

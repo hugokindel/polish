@@ -1,0 +1,51 @@
+1.
+Kindel, Hugo, hugokindel, 21952778
+Jauroyon, Maxime, jauroyon, 21954099
+
+2.
+Les fonctionnalités suivantes sont implémentés:
+- Lecture d'un programme Polish depuis un fichier (read).
+- Affichage d'un programme Polish.
+- Évaluation d'un programme Polish.
+- Simplification de code d'un programme Polish (propagation des constantes et élimination du code mort).
+- Affichage des variables d'un programme Polish et de ses variables non-initialisés.
+- Affichage du signe des variables d'un programme Polish.
+
+3.
+Le projet peux être compilé avec la commande `make` et exécuter directement avec la commande `./run`.
+
+Les commandes possibles sont les suivantes:
+- `./run -reprint FILENAME`: Affiche un programme Polish au chemin d'accès donné.
+- `./run -eval FILENAME`: Simplifie puis évalue un programme Polish au chemin d'accès donné.
+- `./run -simpl FILENAME`: Simplifie un programme Polish au chemin d'accès donné. 
+- `./run -vars FILENAME`: Affiche toutes les variables et les variables non-initialisés d'un programme Polish au chemin d'accès donné.
+- `./run -sign FILENAME`: Affiche le signe des variables d'un programme Polish au chemin d'accès donné.
+
+En terme de librairie externe, nous utilisons la librarie str d'OCaml pour l'interprétation des expressions régulières.
+
+4.
+- `polish.ml`: fichier principal, contient le `main` et interprète les lignes de commandes.
+- `ptypes.ml`: contient tous les types (programme Polish, etc).
+- `putils.ml`: fichier utilitaire, contient des fonctions utilisé par plusieurs autres fichiers du projet.
+- `pread.ml`: Lis et transforme un fichier donné en programme Polish.
+
+Les autres fichiers de code source correspondent chacun à une commande:
+- `pprint.ml`: Affiche un programme Polish sur le terminal.
+- `peval.ml`: Évalue un programme Polish.
+- `psimpl.ml`: Simplifie un programme Polish.
+- `pvars.ml`: Affiche toutes les variables et les variables non-initialisés d'un programme Polish.
+- `psign.ml`: Affiche le signe des variables d'un programme Polish.
+
+5.
+Le travail a été réalisé tout au long du semestre, nous avoons implémenté les fonctionnalité dans l'ordre suivant: read, print, simpl, vars, eval, sign.
+
+Nous avons répartie le travail de tel manière à d'abord nous questionner à deux sur comment implémenter la fonctionnalité voulue, suivi de Maxime qui commençait à implémenter le code dans le projet et finalement Hugo qui terminait la fonctionalité en question.
+
+Cela nous a permis d'alterner assez rapidement les fonctionnalités car pendant que l'un de nous terminait une fonctionnalité, le second pouvait en commencer une autre. Le tout en ayant toujours une compréhension commune de notre travail par nos discussions au préalable.
+
+6.
+Nous avons rajouté les types `indentation` et `line`.
+
+Le type `indentation` est uniquement utilisé à des fins de lisibilité, pour que ce qu'est une `line` soit évident.
+
+Le type `line` est utilisé lors de la lecture d'un fichier vers un type  programme Polish, pour représenter chaque lignes individuelles avec sa liste de mots, sa position et son identation pour pouvoir rendre notre code de lecture plus clair. Ce type est par exemple particulièrement utile pour la lecture des bloc if/else et while pour garder l'indentation dans la structure.
