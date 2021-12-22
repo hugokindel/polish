@@ -3,49 +3,53 @@ open Ptypes
 
 module SymbolTable = Map.Make(String)
 
-let sign_of_int int: sign list =
-  if int = 0 then
+let sign_of_int (number: int): sign list =
+  if number = 0 then
     [Zero]
   else
-    if int < 0 then
+    if number < 0 then
       [Neg]
     else
       [Pos]
 
-let exclusion_sign l1 l2: sign list =
+let exclusion_sign (l1: sign list) (l2: sign list): sign list =
   let rec exclusion_sign_rec l1 l2 acc: sign list =
     match l1 with
     | [] -> acc
-    | x::t -> if List.mem x l2 then exclusion_sign_rec t l2 acc else exclusion_sign_rec t l2 (acc @ [x]) in
+    | x::t ->
+      if List.mem x l2 then exclusion_sign_rec t l2 acc
+      else exclusion_sign_rec t l2 (x::acc) in
   exclusion_sign_rec l1 l2 []
 
-let rec join_sign l1 l2: sign list =
+let join_sign (l1: sign list) (l2: sign list): sign list =
+  let rec join_sign_rec l2 acc: sign list =
     match l2 with
-    | [] -> l1
-    | x::t -> if List.mem x l1 then join_sign l1 t else join_sign (l1 @ [x]) t
+    | [] -> acc
+    | x::t ->
+      if List.mem x acc then join_sign_rec t acc
+      else join_sign_rec t (x::acc) in
+  join_sign_rec l2 l1
 
-let rec equal_sign l1 l2: bool =
+let rec equal_sign (l1: sign list) (l2: sign list): bool =
     match l1 with
     | [] -> true
     | x::t -> if List.mem x l2 then equal_sign t l2 else false
 
-let join_env env1 env2: sign list SymbolTable.t =
+let join_env (env1: (sign list) SymbolTable.t) (env2: (sign list) SymbolTable.t): (sign list) SymbolTable.t =
   SymbolTable.union (fun x y z -> Some (join_sign y z)) env1 env2
 
-let actualize error pos: int =
+let actualize (error: int) (pos: position): int =
   if error != 0 then error else pos
 
-let getFirstError errorIF errorELSE: int =
+let getFirstError (errorIF: int) (errorELSE: int): int =
   if errorIF != 0 then errorIF else errorELSE
 
-let equal_env env1 env2: bool =
+let equal_env (env1: (sign list) SymbolTable.t) (env2: (sign list) SymbolTable.t): bool =
   SymbolTable.equal (fun x y -> equal_sign x y) env1 env2
 
-let sign_op (op: op) lst1 lst2 error pos: sign list * int =
-  let rec sign_op_rec op lst1 lst2 error pos acc = match lst1 with
-  | [] -> (acc,error)
-  | x::t ->
-    let rec verif_rec op sg1 lst2 error pos acc=
+let sign_op (op: op) (lst1: sign list) (lst2: sign list) (error: int) (pos: position): sign list * int =
+
+  let rec verif_rec op sg1 lst2 error pos acc=
     match lst2 with
     | [] -> (acc,error)
     | y::l ->
@@ -61,7 +65,8 @@ let sign_op (op: op) lst1 lst2 error pos: sign list * int =
       | Sub, Zero, Neg
       | Add, Pos, Pos
       | Add, Pos, Zero
-      | Add, Zero, Pos -> verif_rec op sg1 l error pos (join_sign acc [Pos])
+      | Add, Zero, Pos ->
+        verif_rec op sg1 l error pos (join_sign acc [Pos])
       | Mod, Zero, Neg
       | Mod, Zero, Pos
       | Div, Zero, Neg
@@ -70,11 +75,13 @@ let sign_op (op: op) lst1 lst2 error pos: sign list * int =
       | Mul, Pos, Zero
       | Mul, Zero, _
       | Sub, Zero, Zero
-      | Add, Zero, Zero -> verif_rec op sg1 l error pos (join_sign acc [Zero])
+      | Add, Zero, Zero ->
+        verif_rec op sg1 l error pos (join_sign acc [Zero])
       | Sub, Pos, Pos
       | Sub, Neg, Neg
       | Add, Pos, Neg
-      | Add, Neg, Pos -> verif_rec op sg1 l error pos (join_sign acc [Pos;Zero;Neg])
+      | Add, Neg, Pos ->
+        verif_rec op sg1 l error pos (join_sign acc [Pos;Zero;Neg])
       | Mod, Neg, Neg
       | Mod, Pos, Neg
       | Div, Neg, Pos
@@ -84,129 +91,165 @@ let sign_op (op: op) lst1 lst2 error pos: sign list * int =
       | Sub, Zero, Pos
       | Sub, Neg, _
       | Add, Zero, Neg
-      | Add, Neg, _ -> verif_rec op sg1 l error pos (join_sign acc [Neg])
+      | Add, Neg, _ ->
+        verif_rec op sg1 l error pos (join_sign acc [Neg])
       | Mod, _, Zero
-      | Div, _, Zero -> verif_rec op sg1 l (actualize error pos) pos (join_sign acc [sg1;Error])
+      | Div, _, Zero ->
+        verif_rec op sg1 l (actualize error pos) pos (join_sign acc [sg1;Error])
       | _, Error, _
-      | _, _, Error -> verif_rec op sg1 l error pos (join_sign acc [Error]) in
-    let (accSg1,newError) = verif_rec op x lst2 error pos [] in
-    sign_op_rec op t lst2 newError pos (join_sign acc accSg1) in
+      | _, _, Error ->
+        verif_rec op sg1 l error pos (join_sign acc [Error]) in
+
+  let rec sign_op_rec op lst1 lst2 error pos acc =
+    match lst1 with
+    | [] -> (acc,error)
+    | x::t ->
+      let (accSg1,newError) = verif_rec op x lst2 error pos [] in
+      sign_op_rec op t lst2 newError pos (join_sign acc accSg1) in
+
   sign_op_rec op lst1 lst2 error pos []
 
-let rec sign_of_expr expr env error pos: sign list * int =
+let rec sign_of_expr (expr: expr) (env: (sign list) SymbolTable.t) (error: int) (pos: position): sign list * int =
   match expr with
-    | Num integer -> (sign_of_int integer,error)
-    | Var name -> (SymbolTable.find name env,error)
-    | Op (op, expr1, expr2) ->
-      let (lst1,error1) = sign_of_expr expr1 env error pos in
-      let (lst2,error2) = sign_of_expr expr2 env error1 pos in
-      sign_op op lst1 lst2 error2 pos
-
-let inv_of_comp (comp: comp) =
-  match comp with
-  | Eq -> Ne
-  | Ne -> Eq
-  | Lt -> Ge
-  | Le -> Gt
-  | Gt -> Le
-  | Ge -> Lt
-
-let inv_of_cond cond: cond =
-  match cond with
-  | expr1, comp, expr2 -> (expr1,(inv_of_comp comp),expr2)
-
-let plausibility_cond cond env error pos: bool * int =
-  match cond with
-  | expr1, comp, expr2 ->
+  | Num integer -> (sign_of_int integer,error)
+  | Var name -> (SymbolTable.find name env,error)
+  | Op (op, expr1, expr2) ->
     let (lst1,error1) = sign_of_expr expr1 env error pos in
     let (lst2,error2) = sign_of_expr expr2 env error1 pos in
-    let rec eq_rec lst1 lst2 = (match lst1 with
-      | [] -> true
-      | x::t -> if List.mem x lst2 then false else eq_rec t lst2) in
-    let rec ne_rec lst1 lst2 = (match lst1 with
-      | [] -> true
-      | x::t -> if List.mem x lst2 then ne_rec t lst2 else false ) in
-    let rec lt_rec lst1 lst2 = (match lst1 with
-      | [] -> true
-      | x::t -> (match x with
-                 | Pos -> if List.mem Pos lst2 then false else lt_rec t lst2
-                 | Zero -> if List.mem Pos lst2 then false else lt_rec t lst2
-                 | Neg -> if List.mem Pos lst2 || List.mem Zero lst2 then false else lt_rec t lst2
-                 | Error -> lt_rec t lst2 ) ) in
-    let rec gt_rec lst1 lst2 = (match lst1 with
-      | [] -> true
-      | x::t -> (match x with
-                 | Pos -> if List.mem Neg lst2 || List.mem Zero lst2 then false else gt_rec t lst2
-                 | Zero -> if List.mem Neg lst2 then false else gt_rec t lst2
-                 | Neg -> if List.mem Neg lst2 then false else gt_rec t lst2
-                 | Error -> gt_rec t lst2 ) ) in
-    let rec le_rec lst1 lst2 = (match lst1 with
-      | [] -> true
-      | x::t -> (match x with
-                 | Pos -> if List.mem Pos lst2 then false else le_rec t lst2
-                 | Zero -> if List.mem Pos lst2 || List.mem Zero lst2 then false else le_rec t lst2
-                 | Neg -> false
-                 | Error -> le_rec t lst2 ) ) in
-    let rec ge_rec lst1 lst2 = (match lst1 with
-      | [] -> true
-      | x::t -> (match x with
-                 | Pos -> false
-                 | Zero -> if List.mem Neg lst2 || List.mem Zero lst2 then false else ge_rec t lst2
-                 | Neg -> if List.mem Neg lst2 then false else ge_rec t lst2
-                 | Error -> ge_rec t lst2 ) ) in
-    (match comp with
-      | Eq -> (eq_rec lst1 lst2,error2)
-      | Ne -> (ne_rec lst1 lst2,error2)
-      | Lt -> (lt_rec lst1 lst2,error2)
-      | Le -> (le_rec lst1 lst2,error2)
-      | Gt -> (gt_rec lst1 lst2,error2)
-      | Ge -> (ge_rec lst1 lst2,error2) )
+    sign_op op lst1 lst2 error2 pos
 
-let propagation_env cond env error pos =
-  match cond with
-    | expr1, comp, expr2 ->
-      let propa name comp expr2 env error pos =
-                  let (lst2,error2) = sign_of_expr expr2 env error pos in
-                  (match comp with
-                          | Eq -> let signRes = join_sign lst2 (SymbolTable.find name env) in
-                             SymbolTable.add name signRes env
-                          | Ne -> let signRes = exclusion_sign (SymbolTable.find name env) lst2 in
-                             SymbolTable.add name signRes env
-                          | Le
-                          | Lt ->
-                            if List.mem Pos lst2 then
-                              env
-                            else if List.mem Zero lst2 then
-                              let signRes = exclusion_sign (SymbolTable.find name env) [Pos] in
-                              SymbolTable.add name signRes env
-                            else
-                              let signRes = exclusion_sign (SymbolTable.find name env) [Pos;Zero] in
-                              SymbolTable.add name signRes env
-                          | Ge
-                          | Gt ->
-                            if List.mem Neg lst2 then
-                              env
-                            else if List.mem Zero lst2 then
-                              let signRes = exclusion_sign (SymbolTable.find name env) [Neg] in
-                              SymbolTable.add name signRes env
-                            else
-                              let signRes = exclusion_sign (SymbolTable.find name env) [Neg;Zero] in
-                              SymbolTable.add name signRes env ) in
-      (match expr1 with
-          | Var name -> propa name comp expr2 env error pos
-          | _ ->  (match expr2 with
-                     | Var name ->
-                       let reverse_comp comp = (match comp with
-                         | Eq -> Eq
-                         | Ne -> Ne
-                         | Lt -> Gt
-                         | Le -> Ge
-                         | Gt -> Lt
-                         | Ge -> Le ) in
-                       propa name (reverse_comp comp) expr1 env error pos
-                     | _ -> env  )  )
+let inv_of_cond (cond: cond): cond =
+  let inv_of_comp (comp: comp): comp =
+    match comp with
+    | Eq -> Ne
+    | Ne -> Eq
+    | Lt -> Ge
+    | Le -> Gt
+    | Gt -> Le
+    | Ge -> Lt in
 
-let sign_of_cond cond env error pos: sign list SymbolTable.t * int * bool =
+  let (left_expr, comp, right_expr) = cond in
+  (left_expr,(inv_of_comp comp),right_expr)
+
+let plausibility_cond (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (pos: position): bool * int =
+
+  let (left_expr, comp, right_expr) = cond in
+  let (lst1,error1) = sign_of_expr left_expr env error pos in
+  let (lst2,error2) = sign_of_expr right_expr env error1 pos in
+
+  let rec eq_rec lst1 lst2 =
+    (match lst1 with
+     | [] -> true
+     | x::t ->
+       if List.mem x lst2 then false
+       else eq_rec t lst2 ) in
+
+  let rec ne_rec lst1 lst2 =
+    (match lst1 with
+     | [] -> true
+     | x::t ->
+       if List.mem x lst2 then ne_rec t lst2
+       else false ) in
+
+  let rec lt_rec lst1 lst2 =
+    (match lst1 with
+     | [] -> true
+     | x::t ->
+       (match x with
+        | Pos -> if List.mem Pos lst2 then false else lt_rec t lst2
+        | Zero -> if List.mem Pos lst2 then false else lt_rec t lst2
+        | Neg -> if List.mem Pos lst2 || List.mem Zero lst2 then false else lt_rec t lst2
+        | Error -> lt_rec t lst2 ) ) in
+
+  let rec gt_rec lst1 lst2 =
+    (match lst1 with
+     | [] -> true
+     | x::t ->
+       (match x with
+        | Pos -> if List.mem Neg lst2 || List.mem Zero lst2 then false else gt_rec t lst2
+        | Zero -> if List.mem Neg lst2 then false else gt_rec t lst2
+        | Neg -> if List.mem Neg lst2 then false else gt_rec t lst2
+        | Error -> gt_rec t lst2 ) ) in
+
+  let rec le_rec lst1 lst2 =
+    (match lst1 with
+     | [] -> true
+     | x::t ->
+       (match x with
+        | Pos -> if List.mem Pos lst2 then false else le_rec t lst2
+        | Zero -> if List.mem Pos lst2 || List.mem Zero lst2 then false else le_rec t lst2
+        | Neg -> false
+        | Error -> le_rec t lst2 ) ) in
+
+  let rec ge_rec lst1 lst2 =
+    (match lst1 with
+     | [] -> true
+     | x::t ->
+       (match x with
+        | Pos -> false
+        | Zero -> if List.mem Neg lst2 || List.mem Zero lst2 then false else ge_rec t lst2
+        | Neg -> if List.mem Neg lst2 then false else ge_rec t lst2
+        | Error -> ge_rec t lst2 ) ) in
+
+   match comp with
+   | Eq -> (eq_rec lst1 lst2,error2)
+   | Ne -> (ne_rec lst1 lst2,error2)
+   | Lt -> (lt_rec lst1 lst2,error2)
+   | Le -> (le_rec lst1 lst2,error2)
+   | Gt -> (gt_rec lst1 lst2,error2)
+   | Ge -> (ge_rec lst1 lst2,error2)
+
+let propagation_env (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (pos: position): (sign list) SymbolTable.t =
+
+  let (left_expr, comp, right_expr) = cond in
+
+  let propa name comp expr2 env error pos =
+    let (lst2,error2) = sign_of_expr expr2 env error pos in
+      match comp with
+      | Eq ->
+        let signRes = join_sign lst2 (SymbolTable.find name env) in
+        SymbolTable.add name signRes env
+      | Ne ->
+        let signRes = exclusion_sign (SymbolTable.find name env) lst2 in
+        SymbolTable.add name signRes env
+      | Le
+      | Lt ->
+        if List.mem Pos lst2 then
+          env
+        else if List.mem Zero lst2 then
+          let signRes = exclusion_sign (SymbolTable.find name env) [Pos] in
+          SymbolTable.add name signRes env
+        else
+          let signRes = exclusion_sign (SymbolTable.find name env) [Pos;Zero] in
+          SymbolTable.add name signRes env
+      | Ge
+      | Gt ->
+        if List.mem Neg lst2 then
+          env
+        else if List.mem Zero lst2 then
+          let signRes = exclusion_sign (SymbolTable.find name env) [Neg] in
+          SymbolTable.add name signRes env
+        else
+          let signRes = exclusion_sign (SymbolTable.find name env) [Neg;Zero] in
+          SymbolTable.add name signRes env  in
+
+  match left_expr with
+  | Var name -> propa name comp right_expr env error pos
+  | _ ->
+    match right_expr with
+    | Var name ->
+      let reverse_comp comp =
+        (match comp with
+         | Eq -> Eq
+         | Ne -> Ne
+         | Lt -> Gt
+         | Le -> Ge
+         | Gt -> Lt
+         | Ge -> Le ) in
+       propa name (reverse_comp comp) left_expr env error pos
+    | _ -> env
+
+let sign_of_cond (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (pos: position): (sign list) SymbolTable.t * int * bool =
   let (isImpossible,newError) = plausibility_cond cond env error pos in
   if isImpossible then (env,newError,isImpossible)
   else let propaEnv = propagation_env cond env newError pos in (propaEnv,newError,isImpossible)
@@ -273,6 +316,6 @@ let rec print_sign = function
              | Pos -> printf "+"
              | Error -> printf "!" ); print_sign t
 
-let print_sign env error: unit =
+let print_sign (env: (sign list) SymbolTable.t) (error: int): unit =
   SymbolTable.iter (fun key -> fun value -> printf "%s " key; print_sign value; printf "\n") env;
   if error != 0 then printf "divbyzero %d\n" error else printf "safe\n"
