@@ -1,12 +1,14 @@
 open Ptypes
 open Putils
 
+(** Returns a pair of boolean to said if first it can be dead and second the result of the condition. *)
 let is_code_dead (cond: cond): bool * bool =
   let (left_expr, comp, right_expr) = cond in
   match left_expr, right_expr with
   | Num int1, Num int2 -> (true, (eval_comp comp int1 int2))
   | _, _ -> (false, false)
 
+(** Returns a simplified expression. *)
 let rec simpl_expr (expr: expr): expr =
   match expr with
   | Num integer -> Num integer
@@ -30,16 +32,20 @@ let rec simpl_expr (expr: expr): expr =
   	| _,_,_ ->
   		let simpl_expr1 = simpl_expr expr1 in
   		let simpl_expr2 = simpl_expr expr2 in
+  		(** If there is no modification we can't simplifie more *)
   		if simpl_expr1 = expr1 && simpl_expr2 = expr2 then
         Op (op, simpl_expr1, simpl_expr2)
+        (** Else we need to check if we can simplifie more *)
   		else
         simpl_expr (Op (op, simpl_expr1, simpl_expr2))
 
+(** Returns a simplified condition. *)
 let simpl_cond (cond: cond): cond =
   match cond with
   | (left_expr, comp, right_expr) ->
     ((simpl_expr left_expr), comp, (simpl_expr right_expr))
 
+(* Simplifies a block. *)
 let simpl_block (block: block): block =
 
   let rec simpl_block_rec block acc: block =
@@ -54,11 +60,15 @@ let simpl_block (block: block): block =
         | If (cond, if_block, else_block) ->
           let cond = (simpl_cond cond) in
           let (one_is_dead, else_is_dead) = is_code_dead cond in
+          (** If one of the block can be dead. *)
           if one_is_dead then
+            (** The condition is true. *)
             if else_is_dead then
-              simpl_block_rec if_block [] 
+              simpl_block_rec if_block []
+            (** Else it's false. *)
             else
               simpl_block_rec else_block []
+          (** Else we keep both. *)
           else
             let if_block = simpl_block_rec if_block [] in
             let else_block = simpl_block_rec else_block [] in
@@ -66,7 +76,9 @@ let simpl_block (block: block): block =
         | While (cond, block) ->
           let cond = simpl_cond cond in
           let (one_is_dead, else_is_dead) = is_code_dead cond in
+          (** If the While block can be dead and his condition is false. *)
           if one_is_dead && (not else_is_dead) then []
+          (** Else we keep it. *)
           else [(position, While (cond, (simpl_block_rec block [])))] in
       simpl_block_rec block' (acc @ simpl_block) in
 

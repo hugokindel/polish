@@ -3,6 +3,7 @@ open Printf
 
 module SymbolSet = Set.Make(String)
 
+(** Returns the new environments after verification of the expression. *)
 let rec vars_expr (expr: expr) (init: SymbolSet.t) (uninit: SymbolSet.t): SymbolSet.t * SymbolSet.t =
   match expr with
   | Num integer -> (init, uninit)
@@ -15,12 +16,14 @@ let rec vars_expr (expr: expr) (init: SymbolSet.t) (uninit: SymbolSet.t): Symbol
     let (init, uninit) = vars_expr expr1 init uninit in
     vars_expr expr2 init uninit
 
+(** Returns the new environments after verification of the condition. *)
 let vars_cond (cond: cond) (init: SymbolSet.t) (uninit: SymbolSet.t): SymbolSet.t * SymbolSet.t =
   match cond with
   | (left_expr, comp, right_expr) ->
   	let (init, uninit) = vars_expr left_expr init uninit in
     vars_expr right_expr init uninit
 
+(* Analyze a block.  *)
 let vars_block (block: block): SymbolSet.t * SymbolSet.t =
 
   let rec vars_block_rec (block: block) (init: SymbolSet.t) (uninit: SymbolSet.t): SymbolSet.t * SymbolSet.t =
@@ -50,6 +53,7 @@ let vars_block (block: block): SymbolSet.t * SymbolSet.t =
 
   vars_block_rec block SymbolSet.empty SymbolSet.empty
 
+(* Prints all variables of a set to know which ones were uninitialized after access. *)
 let print_vars (init: SymbolSet.t) (uninit: SymbolSet.t): unit =
   SymbolSet.iter (fun elt -> printf "%s " elt) (SymbolSet.union init uninit);
   printf "\n";
