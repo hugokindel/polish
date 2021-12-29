@@ -58,12 +58,12 @@ let equal_env (env1: (sign list) SymbolTable.t) (env2: (sign list) SymbolTable.t
 (** Returns the sign list and error of an operation. *)
 let sign_op (op: op) (lst1: sign list) (lst2: sign list) (error: int) (pos: position): sign list * int =
 
-  (** Compare a sign with a sign list. *)
+  (* Compare a sign with a sign list. *)
   let rec verif_rec op sg1 lst2 error pos acc=
     match lst2 with
     | [] -> (acc,error)
     | y::l ->
-      (** Comparison made one at a time. *)
+      (* Comparison made one at a time. *)
       match op, sg1, y with
       | Mod, Neg, Pos
       | Mod, Pos, Pos
@@ -111,12 +111,12 @@ let sign_op (op: op) (lst1: sign list) (lst2: sign list) (error: int) (pos: posi
       | _, _, Error ->
         verif_rec op sg1 l error pos (join_sign acc [Error]) in
 
-  (** Compare two sign list. *)
+  (* Compare two sign list. *)
   let rec sign_op_rec op lst1 lst2 error pos acc =
     match lst1 with
     | [] -> (acc,error)
     | x::t ->
-      (** Comparison made one at a time. *)
+      (* Comparison made one at a time. *)
       let (accSg1,newError) = verif_rec op x lst2 error pos [] in
       sign_op_rec op t lst2 newError pos (join_sign acc accSg1) in
 
@@ -220,7 +220,7 @@ let propagation_env (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (
 
   let (left_expr, comp, right_expr) = cond in
 
-  (** Returns the new environment of the variable 'name' when we match Var comp expr2. *)
+  (* Returns the new environment of the variable 'name' when we match Var comp expr2. *)
   let propa name comp expr2 env error pos =
     let (lst2,error2) = sign_of_expr expr2 env error pos in
       match comp with
@@ -256,7 +256,7 @@ let propagation_env (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (
   | _ ->
     match right_expr with
     | Var name ->
-      (** going from left_expr comp Var to Var (reverse_comp) left_expr. *)
+      (* going from left_expr comp Var to Var (reverse_comp) left_expr. *)
       let reverse_comp comp =
         (match comp with
          | Eq -> Eq

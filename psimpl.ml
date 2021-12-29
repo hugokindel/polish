@@ -32,10 +32,10 @@ let rec simpl_expr (expr: expr): expr =
   	| _,_,_ ->
   		let simpl_expr1 = simpl_expr expr1 in
   		let simpl_expr2 = simpl_expr expr2 in
-  		(** If there is no modification we can't simplifie more *)
+  		(* If there is no modification we can't simplifie more *)
   		if simpl_expr1 = expr1 && simpl_expr2 = expr2 then
         Op (op, simpl_expr1, simpl_expr2)
-        (** Else we need to check if we can simplifie more *)
+        (* Else we need to check if we can simplifie more *)
   		else
         simpl_expr (Op (op, simpl_expr1, simpl_expr2))
 
@@ -60,15 +60,15 @@ let simpl_block (block: block): block =
         | If (cond, if_block, else_block) ->
           let cond = (simpl_cond cond) in
           let (one_is_dead, else_is_dead) = is_code_dead cond in
-          (** If one of the block can be dead. *)
+          (* If one of the block can be dead. *)
           if one_is_dead then
-            (** The condition is true. *)
+            (* The condition is true. *)
             if else_is_dead then
               simpl_block_rec if_block []
-            (** Else it's false. *)
+            (* Else it's false. *)
             else
               simpl_block_rec else_block []
-          (** Else we keep both. *)
+          (* Else we keep both. *)
           else
             let if_block = simpl_block_rec if_block [] in
             let else_block = simpl_block_rec else_block [] in
@@ -76,9 +76,9 @@ let simpl_block (block: block): block =
         | While (cond, block) ->
           let cond = simpl_cond cond in
           let (one_is_dead, else_is_dead) = is_code_dead cond in
-          (** If the While block can be dead and his condition is false. *)
+          (* If the While block can be dead and his condition is false. *)
           if one_is_dead && (not else_is_dead) then []
-          (** Else we keep it. *)
+          (* Else we keep it. *)
           else [(position, While (cond, (simpl_block_rec block [])))] in
       simpl_block_rec block' (acc @ simpl_block) in
 
