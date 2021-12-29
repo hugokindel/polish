@@ -230,8 +230,7 @@ let propagation_env (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (
       | Ne ->
         let signRes = exclusion_sign (SymbolTable.find name env) lst2 in
         SymbolTable.add name signRes env
-      | Le
-      | Lt ->
+      | Le ->
         if List.mem Pos lst2 then
           env
         else if List.mem Zero lst2 then
@@ -240,8 +239,16 @@ let propagation_env (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (
         else
           let signRes = exclusion_sign (SymbolTable.find name env) [Pos;Zero] in
           SymbolTable.add name signRes env
-      | Ge
-      | Gt ->
+      | Lt ->
+        if List.mem Pos lst2 then
+          let signRes = exclusion_sign (SymbolTable.find name env) [Pos] in
+          SymbolTable.add name signRes env
+        else if List.mem Zero lst2 then
+          let signRes = exclusion_sign (SymbolTable.find name env) [Pos;Zero] in
+          SymbolTable.add name signRes env
+        else
+          env
+      | Ge ->
         if List.mem Neg lst2 then
           env
         else if List.mem Zero lst2 then
@@ -249,24 +256,34 @@ let propagation_env (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (
           SymbolTable.add name signRes env
         else
           let signRes = exclusion_sign (SymbolTable.find name env) [Neg;Zero] in
-          SymbolTable.add name signRes env  in
+          SymbolTable.add name signRes env
+      | Gt ->
+        if List.mem Neg lst2 then
+          let signRes = exclusion_sign (SymbolTable.find name env) [Neg] in
+          SymbolTable.add name signRes env
+        else if List.mem Zero lst2 then
+          let signRes = exclusion_sign (SymbolTable.find name env) [Neg;Zero] in
+          SymbolTable.add name signRes env
+        else
+          env in
 
-  match left_expr with
-  | Var name -> propa name comp right_expr env error pos
-  | _ ->
-    match right_expr with
-    | Var name ->
-      (* going from left_expr comp Var to Var (reverse_comp) left_expr. *)
-      let reverse_comp comp =
-        (match comp with
-         | Eq -> Eq
-         | Ne -> Ne
-         | Lt -> Gt
-         | Le -> Ge
-         | Gt -> Lt
-         | Ge -> Le ) in
-       propa name (reverse_comp comp) left_expr env error pos
-    | _ -> env
+  (* going from left_expr comp Var to Var (reverse_comp) left_expr. *)
+  let reverse_comp comp =
+    (match comp with
+     | Eq -> Eq
+     | Ne -> Ne
+     | Lt -> Gt
+     | Le -> Ge
+     | Gt -> Lt
+     | Ge -> Le ) in
+
+  match left_expr, right_expr with
+  | Var nameL, Var nameR ->
+    let newEnv = propa nameL comp right_expr env error pos in
+    propa nameR (reverse_comp comp) left_expr newEnv error pos
+  | Var name, _ -> propa name comp right_expr env error pos
+  | _, Var name -> propa name (reverse_comp comp) left_expr env error pos
+  | _, _ -> env
 
 (** Returns the new environment, error and if the condition is possible. *)
 let sign_of_cond (cond: cond) (env: (sign list) SymbolTable.t) (error: int) (pos: position): (sign list) SymbolTable.t * int * bool =
@@ -284,14 +301,8 @@ let sign_block (block: block): (sign list) SymbolTable.t * int =
       let (env',error') =
         match instr with
         | Set (name, expr) ->
-          let exist = SymbolTable.mem name env in
           let (sign2,error2) = sign_of_expr expr env error pos in
-          let signRes  =
-          if exist then
-            join_sign (SymbolTable.find name env) sign2
-          else
-            sign2 in
-          ((SymbolTable.add name signRes env), error2)
+          ((SymbolTable.add name sign2 env), error2)
         | Print (expr) -> (env, error)
         | Read (name) -> ((SymbolTable.add name [Neg;Zero;Pos] env), error)
         | If (cond, if_block, else_block) ->
