@@ -1,5 +1,6 @@
 (executable
  (name polish)
+ (modes byte exe)
  (flags :standard -w -27-26-32-33 \ -short-paths)
  (libraries str)
 )
