@@ -172,9 +172,9 @@ let plausibility_cond (cond: cond) (env: (sign list) SymbolTable.t) (error: int)
      | [] -> true
      | x::t ->
        (match x with
-        | Pos -> if List.mem Pos lst2 then false else lt_rec t lst2
+        | Pos
         | Zero -> if List.mem Pos lst2 then false else lt_rec t lst2
-        | Neg -> if List.mem Pos lst2 || List.mem Zero lst2 then false else lt_rec t lst2
+        | Neg -> false
         | Error -> lt_rec t lst2 ) ) in
 
   let rec gt_rec lst1 lst2 =
@@ -182,8 +182,8 @@ let plausibility_cond (cond: cond) (env: (sign list) SymbolTable.t) (error: int)
      | [] -> true
      | x::t ->
        (match x with
-        | Pos -> if List.mem Neg lst2 || List.mem Zero lst2 then false else gt_rec t lst2
-        | Zero -> if List.mem Neg lst2 then false else gt_rec t lst2
+        | Pos -> false
+        | Zero
         | Neg -> if List.mem Neg lst2 then false else gt_rec t lst2
         | Error -> gt_rec t lst2 ) ) in
 
